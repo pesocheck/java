@@ -1,29 +1,42 @@
 package javalab1;
 
-/**
- * Класс для хранения одной записи таблицы (ЛР2).
- * Хранит нижний предел, верхний предел, шаг и результат интегрирования.
- */
-public class RecIntegral {
-    
+import java.io.Serializable;
+
+public class RecIntegral implements Serializable {
+
+    private static final long serialVersionUID = 1L;
     private static final double MIN_VALUE = 0.000001;
     private static final double MAX_VALUE = 1000000;
-
+    
+    private int id;
     private double lowerBound;
     private double upperBound;
     private double step;
     private String result;
 
-public RecIntegral(double lowerBound, double upperBound, double step) throws InvalidException {
-    validateRange(lowerBound);
-    validateRange(upperBound);
-    validateRange(step);
+    public RecIntegral(double lowerBound, double upperBound, double step) throws InvalidException {
+        this.id = -1;
+        
+        validateRange(lowerBound);
+        validateRange(upperBound);
+        validateRange(step);
 
-    this.lowerBound = lowerBound;
-    this.upperBound = upperBound;
-    this.step = step;
-    this.result = "";
-}
+        if (upperBound < lowerBound) {
+            throw new InvalidException("Upper limit cannot be less than lower limit!", upperBound);
+        }
+
+        if (step <= 0) {
+            throw new InvalidException("Step must be positive!", step);
+        }
+
+        this.lowerBound = lowerBound;
+        this.upperBound = upperBound;
+        this.step = step;
+        this.result = "";
+    }
+    
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
     public double getLowerBound() { return lowerBound; }
     public void setLowerBound(double lowerBound) { this.lowerBound = lowerBound; }
@@ -37,68 +50,69 @@ public RecIntegral(double lowerBound, double upperBound, double step) throws Inv
     public String getResult() { return result; }
     public void setResult(String result) { this.result = result; }
 
-    /**
-     * Вычисляет определённый интеграл функции f(x) = 1/ln(x)
-     * методом трапеций на отрезке [lowerBound, upperBound] с заданным шагом.
-     */
     public void calculate() {
         if (step <= 0) {
-            result = "Ошибка (шаг)";
+            result = "Error (step)";
             return;
         }
 
         if (lowerBound >= upperBound) {
-            result = "Ошибка (границы)";
+            result = "Error (bounds)";
             return;
         }
 
         double sum = 0;
         double xPrev = lowerBound;
 
-        // Проверка первой точки
         if (xPrev <= 0 || xPrev == 1) {
-            result = "Ошибка (x)";
+            result = "Error (x)";
             return;
         }
+
         double fPrev = 1.0 / Math.log(xPrev);
 
-        // Основной цикл метода трапеций
         for (double x = lowerBound + step; x <= upperBound; x += step) {
             if (x <= 0 || x == 1) {
-                result = "Ошибка (x)";
+                result = "Error (x)";
                 return;
             }
 
             double fCurr = 1.0 / Math.log(x);
-            sum += (fPrev + fCurr) / 2 * step;  // площадь трапеции
+            sum += (fPrev + fCurr) / 2 * step;
+
             fPrev = fCurr;
+            xPrev = x;
         }
 
-        if (xPrev + step < upperBound) {
+        if (xPrev < upperBound) {
             double xLast = upperBound;
+
             if (xLast <= 0 || xLast == 1) {
-                result = "Ошибка (x)";
+                result = "Error (x)";
                 return;
             }
+
             double fLast = 1.0 / Math.log(xLast);
-            sum += (fPrev + fLast) / 2 * (upperBound - (xPrev + step - step));
+            sum += (fPrev + fLast) / 2 * (upperBound - xPrev);
         }
 
-        result = String.format("%.6f", sum);
+        result = String.format("%.6f", sum).replace(",", ".");
     }
-   
- private void validateRange(double value) throws InvalidException {
-    if (value < MIN_VALUE || value > MAX_VALUE) {
-        throw new InvalidException(
-            "Значение должно быть в диапазоне от " 
-            + MIN_VALUE + " до " + MAX_VALUE 
-            + ". Введено: " + value
-        );
+
+    private void validateRange(double value) throws InvalidException {
+        if (value < MIN_VALUE || value > MAX_VALUE) {
+            throw new InvalidException(
+                "Value must be in range "
+                + MIN_VALUE + " to " + MAX_VALUE
+                + ". Entered: " + value,
+                value
+            );
+        }
     }
-}
 
     @Override
     public String toString() {
-        return lowerBound + " " + upperBound + " " + step + " " + result;
+        String res = (result == null || result.isEmpty()) ? "0" : result;
+        return lowerBound + " " + upperBound + " " + step + " " + res;
     }
-}   
+}
